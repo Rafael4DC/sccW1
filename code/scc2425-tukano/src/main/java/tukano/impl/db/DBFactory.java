@@ -13,7 +13,7 @@ public class DBFactory {
         if (instance == null) {
             logger.info("Initializing DB as: " + Resources.getDb());
             if ("nosql".equals(Resources.getDb())) {
-                instance = DBNOSQL.getInstance("PRIMARY_REGION"); // Replace with the desired region
+                instance = DBNOSQL.getInstance("PRIMARY_REGION");
             } else {
                 instance = new DBSQL();
             }

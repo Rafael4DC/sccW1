@@ -6,9 +6,11 @@ import tukano.impl.data.Following;
 import tukano.impl.data.Likes;
 import tukano.impl.db.DB;
 import tukano.impl.db.DBFactory;
+import tukano.impl.db.DBNOSQL;
 import tukano.impl.rest.TukanoRestServer;
 import tukano.impl.rest.Resources;
 
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -64,7 +66,9 @@ public class JavaShorts implements Shorts {
     @Override
     public Result<Void> deleteShort(String shortId, String password) {
         Log.info(() -> format("deleteShort : shortId = %s, pwd = %s\n", shortId, password));
+        if( DB instanceof DBNOSQL){
 
+        }
         return errorOrResult(getShort(shortId), shrt -> {
 
             return errorOrResult(okUser(shrt.getOwnerId(), password), user -> {
