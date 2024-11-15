@@ -1,0 +1,16 @@
+{
+  "scriptFile" : "../scc2425-lab5-1.0.jar",
+  "entryPoint" : "scc.serverless.FunctionCountViews.run",
+  "bindings" : [ {
+    "type" : "httpTrigger",
+    "direction" : "in",
+    "name" : "httpTrigger",
+    "route" : "shorts/{itemId}",
+    "methods" : [ "GET" ],
+    "authLevel" : "FUNCTION"
+  }, {
+    "type" : "http",
+    "direction" : "out",
+    "name" : "$return"
+  } ]
+}
