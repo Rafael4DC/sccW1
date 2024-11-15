@@ -1,4 +1,5 @@
-scc\serverless\FunctionCountViews.class
 scc\data\Short.class
+scc\serverless\FunctionTukanoRecommends.class
 scc\utils\GSON.class
 scc\data\User.class
+scc\serverless\FunctionBlobCountViews.class

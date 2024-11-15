@@ -35,7 +35,7 @@ function addUser(user_info) {
     let userId = user_info[0];
     let pwd = user_info[2];
     let email = user_info[1];
-    let displayName = user_info[3];
+let displayName = user_info[3];
     let user = {
         id: userId,
         pwd: pwd,
@@ -190,7 +190,7 @@ function loadShorts() {
     });
 }
 
-loadShorts()
+//loadShorts()
 
 // May need to change some of this logic.
 function selectVideoToDownload(context, events, done) {
@@ -255,7 +255,7 @@ function getLoginDetails(requestParams, context, ee, next) {
 function setupLikeShort(requestParams, context, ee, next) {
     var user = chooseRandomRegisteredUser();
     var shortv = chooseRandomShort();
-    context.vars['userId'] = user.userId;
+    context.vars['userId'] = user.id;
     context.vars['pwd'] = user.pwd;
     context.vars['shortId'] = shortv;
     return next();
@@ -282,9 +282,9 @@ function getShortDownloadDetails(requestParams, context, ee, next) {
         return next(error);
     }
     var short_id = chooseRandomShort();
-    context.vars['shortId'] = short_id;
+    context.vars['id'] = short_id;
     var owner_details = registeredUsersMap.get(shortMap.get(short_id).ownerId);
-    context.vars['userId'] = owner_details.userId;
+    context.vars['ownerId'] = owner_details.userId;
     context.vars['pwd'] = owner_details.pwd; 
     return next();
 }

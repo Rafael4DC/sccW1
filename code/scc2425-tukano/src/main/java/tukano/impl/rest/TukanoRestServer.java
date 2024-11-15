@@ -22,8 +22,9 @@ public class TukanoRestServer extends Application {
     final private static Logger Log = Logger.getLogger(TukanoRestServer.class.getName());
     public static String serverURI;
     static String SERVER_BASE_URI = "http://%s:%s/rest";
-    private final boolean isCache = false;
+    private final boolean isCache = true;
     private final String db = "nosql";
+    private final String main = "eu";
     //if azure
     private final Set<Object> singletons = new HashSet<>();
     private final Set<Class<?>> resources = new HashSet<>();
@@ -35,7 +36,7 @@ public class TukanoRestServer extends Application {
         resources.add(RestShortsResource.class);
         resources.add(RestBlobsResource.class);
 
-        Resources.start(db,isCache);
+        Resources.start(db,isCache,main);
     }
 
     public static void main(String[] args) throws Exception {
@@ -53,7 +54,7 @@ public class TukanoRestServer extends Application {
         config.register(RestShortsResource.class);
 
 
-        Resources.start(db,isCache);
+        Resources.start(db,isCache,main);
 
         JdkHttpServerFactory.createHttpServer(URI.create(serverURI.replace(IP.hostname(), INETADDR_ANY)), config);
 

@@ -19,35 +19,34 @@ import static tukano.api.Result.ok;
 
 public class CloudStorage implements BlobStorage {
     private final BlobContainerClient containerClient;
+    private final BlobContainerClient containerClientnB;
     private final String storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=tukanostorage71750;AccountKey=0fZLpV8LHC1ggTMSyZQftaRxDeXVlwEH74CnUk3B+hsYIG5Q5pAsZAe2F6rwrpNBHc/k9vw7mrmr+ASt8T1tKA==;EndpointSuffix=core.windows.net";
+    private final String storageConnectionStringB = "DefaultEndpointsProtocol=https;AccountName=tukano71750usc;AccountKey=k4AS5jTtsNyAJbShwSdIKK9Ab5lnzE5TNczItR54tbGQX81gQl6D1Kv5NCG5tY3T0sT5Uu1A4q6b+AStJ8Ralg==;EndpointSuffix=core.windows.net";
     private final String containerName = "shorts";
 
     public CloudStorage() {
+
         containerClient = new BlobContainerClientBuilder()
+                .connectionString(storageConnectionStringB) //make B when NA
+                .containerName(containerName)
+                .buildClient();
+
+        containerClientnB = new BlobContainerClientBuilder()
                 .connectionString(storageConnectionString)
                 .containerName(containerName)
                 .buildClient();
 
     }
 
+
+
     @Override
     public Result<Void> write(String path, byte[] bytes) {
         if (path == null)
             return error(BAD_REQUEST);
-
         try {
-            BlobClient blobClient = containerClient.getBlobClient(path);
-
-            if (blobClient.exists()) {
-                byte[] existingData = readBlob(blobClient);
-                if (Arrays.equals(Hash.sha256(bytes), Hash.sha256(existingData))) {
-                    return ok();
-                } else {
-                    return error(CONFLICT);
-                }
-            }
-
-            blobClient.upload(new ByteArrayInputStream(bytes), bytes.length, true);
+            containerClient.getBlobClient(path).upload(new ByteArrayInputStream(bytes), bytes.length, true);
+            containerClientnB.getBlobClient(path).upload(new ByteArrayInputStream(bytes), bytes.length, true);
             return ok();
         } catch (Exception e) {
             e.printStackTrace();
@@ -63,9 +62,13 @@ public class CloudStorage implements BlobStorage {
         try {
             BlobClient blobClient = containerClient.getBlobClient(path);
             if (!blobClient.exists()) {
-                return error(NOT_FOUND);
+                BlobClient blobClient2 = containerClientnB.getBlobClient(path);
+                if (!blobClient2.exists()) {
+                    return error(NOT_FOUND);
+                }
+                byte[] data = readBlob(blobClient);
+                return ok(data);
             }
-
             byte[] data = readBlob(blobClient);
             return ok(data);
         } catch (Exception e) {

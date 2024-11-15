@@ -33,9 +33,9 @@ public class DBNOSQL implements DB {
                     .endpoint(DB_URL)
                     .key(DB_KEY)
                     .multipleWriteRegionsEnabled(true)
-                    //.preferredRegions(List.of(primaryRegion))
+                    .preferredRegions(List.of("East US 2"))
                     //.gatewayMode() // https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/sdk-connection-modes left here for eduroam purposes
-                    //.directMode() // for better performance
+                    .directMode() // for better performance
                     .consistencyLevel(ConsistencyLevel.SESSION)
                     .connectionSharingAcrossClientsEnabled(true)
                     .contentResponseOnWriteEnabled(true) // On write, return the object written

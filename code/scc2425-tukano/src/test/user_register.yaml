@@ -1,5 +1,5 @@
 config:
-    target: https://tukano-azure-71750.azurewebsites.net/rest
+    target:  https://tukano-azure-71750na.azurewebsites.net/rest
     phases:
         - name: simple_post
           duration: 100

@@ -49,6 +49,7 @@ public class JavaBlobs implements Blobs {
         //if (!validBlobId(blobId, token))
             //return error(FORBIDDEN);
 
+
         return storage.read(toPath(blobId));
     }
 

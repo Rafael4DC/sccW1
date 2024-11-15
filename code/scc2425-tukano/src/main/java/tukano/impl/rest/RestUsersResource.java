@@ -24,7 +24,7 @@ public class RestUsersResource extends RestResource implements RestUsers {
 
     @Override
     public String createUser(User user) {
-        if(!Resources.isCache()){return super.resultOrThrow(impl.createUser(user));}
+        if(Resources.isCache()){return super.resultOrThrow(impl.createUser(user));}
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             var key = USER_CACHE + user.getId();
@@ -40,7 +40,7 @@ public class RestUsersResource extends RestResource implements RestUsers {
 
     @Override
     public User getUser(String name, String pwd) {
-        if(!Resources.isCache()){return super.resultOrThrow(impl.getUser(name, pwd));}
+        if(Resources.isCache()){return super.resultOrThrow(impl.getUser(name, pwd));}
 
         try (var jedis = RedisCache.getCachePool().getResource()) {
             var key = USER_CACHE + name;
@@ -57,7 +57,7 @@ public class RestUsersResource extends RestResource implements RestUsers {
 
     @Override
     public User updateUser(String name, String pwd, User user) {
-        if(!Resources.isCache()){return super.resultOrThrow(impl.updateUser(name, pwd, user));}
+        if(Resources.isCache()){return super.resultOrThrow(impl.updateUser(name, pwd, user));}
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             var newUser = super.resultOrThrow(impl.updateUser(name, pwd, user));
@@ -72,7 +72,7 @@ public class RestUsersResource extends RestResource implements RestUsers {
 
     @Override
     public User deleteUser(String name, String pwd) {
-        if(!Resources.isCache()){return super.resultOrThrow(impl.deleteUser(name, pwd));}
+        if(Resources.isCache()){return super.resultOrThrow(impl.deleteUser(name, pwd));}
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             var userKey = USER_CACHE + name;

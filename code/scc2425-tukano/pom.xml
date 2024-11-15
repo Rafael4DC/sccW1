@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>scc2425</groupId>
     <artifactId>tukano</artifactId>
@@ -9,7 +7,7 @@
     <packaging>war</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <authors>xxxxx-xxxxx</authors>
+        <authors>71750</authors>
     </properties>
     <build>
         <resources>
@@ -53,9 +51,10 @@
                 <configuration>
                     <schemaVersion>v2</schemaVersion>
                     <resourceGroup>tukano-azure-71750rg</resourceGroup>
-                    <appName>tukano-azure-71750</appName>
+                    <appName>tukano-azure-71750NA</appName>
                     <pricingTier>F1</pricingTier>
-                    <region>southcentralus</region> <!--Change this for geo replication South Central US-->
+                    <region>eastus2</region>
+                    <!--Change this for geo replication South Central US-->
                     <runtime>
                         <os>Linux</os>
                         <javaVersion>Java 17</javaVersion>

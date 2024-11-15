@@ -1,5 +1,9 @@
 package tukano.impl;
 
+import com.azure.cosmos.models.CosmosBatch;
+import com.azure.cosmos.models.CosmosBatchResponse;
+import com.azure.cosmos.models.CosmosQueryRequestOptions;
+import com.azure.cosmos.models.PartitionKey;
 import tukano.api.Short;
 import tukano.api.*;
 import tukano.impl.data.Following;
@@ -7,6 +11,7 @@ import tukano.impl.data.Likes;
 import tukano.impl.db.DB;
 import tukano.impl.db.DBFactory;
 import tukano.impl.db.DBNOSQL;
+import tukano.impl.db.DBSQL;
 import tukano.impl.rest.TukanoRestServer;
 import tukano.impl.rest.Resources;
 
@@ -16,9 +21,8 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
-import static tukano.api.Result.ErrorCode.BAD_REQUEST;
-import static tukano.api.Result.ErrorCode.FORBIDDEN;
 import static tukano.api.Result.*;
+import static tukano.api.Result.ErrorCode.*;
 
 public class JavaShorts implements Shorts {
 
@@ -66,23 +70,43 @@ public class JavaShorts implements Shorts {
     @Override
     public Result<Void> deleteShort(String shortId, String password) {
         Log.info(() -> format("deleteShort : shortId = %s, pwd = %s\n", shortId, password));
-        if( DB instanceof DBNOSQL){
+        if( DB instanceof DBSQL){
+            return errorOrResult(getShort(shortId), shrt -> {
+                return errorOrResult(okUser(shrt.getOwnerId(), password), user -> {
+                    return DB.transaction(hibernate -> {
 
-        }
-        return errorOrResult(getShort(shortId), shrt -> {
+                        hibernate.remove(shrt);
 
-            return errorOrResult(okUser(shrt.getOwnerId(), password), user -> {
-                return DB.transaction(hibernate -> {
+                        var query = format("DELETE Likes l WHERE l.shortId = '%s'", shortId);
+                        hibernate.createNativeQuery(query, Likes.class).executeUpdate();
 
-                    hibernate.remove(shrt);
-
-                    var query = format("DELETE Likes l WHERE l.shortId = '%s'", shortId);
-                    hibernate.createNativeQuery(query, Likes.class).executeUpdate();
-
-                    JavaBlobs.getInstance().delete(shrt.getBlobUrl(), Token.get());
+                        JavaBlobs.getInstance().delete(shrt.getBlobUrl(), Token.get());
+                    });
                 });
             });
-        });
+        }else{
+            return errorOrResult(getShort(shortId), shrt -> {
+                return errorOrResult(okUser(shrt.getOwnerId(), password), user -> {
+                    try {
+                        CosmosBatch batch = CosmosBatch.createCosmosBatch(new PartitionKey(shortId));
+                        batch.deleteItemOperation(shortId);
+                        batch.deleteItemOperation(format("Likes-%s", shortId));
+                        CosmosBatchResponse response = DBNOSQL.getContainer(Short.class).executeCosmosBatch(batch);
+
+                        if (response.getStatusCode() == 200) {
+                            JavaBlobs.getInstance().delete(shrt.getBlobUrl(), Token.get());
+                            return ok();
+                        } else {
+                            return error(INTERNAL_ERROR);
+                        }
+
+                    } catch (Exception e) {
+                        Log.warning(() -> "Failed to delete short in Cosmos DB: " + e.getMessage());
+                        return error(INTERNAL_ERROR);
+                    }
+                });
+            });
+        }
     }
 
     @Override
@@ -165,21 +189,65 @@ public class JavaShorts implements Shorts {
     @Override
     public Result<Void> deleteAllShorts(String userId, String password, String token) {
         Log.info(() -> format("deleteAllShorts : userId = %s, password = %s, token = %s\n", userId, password, token));
-        return DB.transaction((hibernate) -> {
 
-            //delete shorts
-            var query1 = format("DELETE Short s WHERE s.ownerId = '%s'", userId);
-            hibernate.createQuery(query1, Short.class).executeUpdate();
+        if (DB instanceof DBSQL) {
+            // SQL-based logic
+            return DB.transaction((hibernate) -> {
 
-            //delete follows
-            var query2 = format("DELETE Following f WHERE f.follower = '%s' OR f.followee = '%s'", userId, userId);
-            hibernate.createQuery(query2, Following.class).executeUpdate();
+                // Validate user password
+                var userResult = okUser(userId, password);
+                if (!userResult.isOK()) {
+                    return error(FORBIDDEN);
+                }
 
-            //delete likes
-            var query3 = format("DELETE Likes l WHERE l.ownerId = '%s' OR l.userId = '%s'", userId, userId);
-            hibernate.createQuery(query3, Likes.class).executeUpdate();
+                // Delete shorts
+                var query1 = format("DELETE FROM Short s WHERE s.ownerId = '%s'", userId);
+                hibernate.createQuery(query1).executeUpdate();
 
-        });
+                // Delete follows
+                var query2 = format("DELETE FROM Following f WHERE f.follower = '%s' OR f.followee = '%s'", userId, userId);
+                hibernate.createQuery(query2).executeUpdate();
+
+                // Delete likes
+                var query3 = format("DELETE FROM Likes l WHERE l.ownerId = '%s' OR l.userId = '%s'", userId, userId);
+                hibernate.createQuery(query3).executeUpdate();
+
+                // Optionally delete user's blobs (if necessary, for each short deleted)
+                // Example: JavaBlobs.getInstance().delete(blobUrl, token);
+
+                return ok(); // Return success
+            });
+        } else {
+            return errorOrResult(okUser(userId, password), user -> {
+                try {
+                    var shorts = DBNOSQL.getContainer(Short.class)
+                            .queryItems("SELECT * FROM Short WHERE c.ownerId = @ownerId",
+                                    new CosmosQueryRequestOptions().setPartitionKey(new PartitionKey(userId)),
+                                    Short.class)
+                            .stream()
+                            .toList();
+
+                    CosmosBatch batch = CosmosBatch.createCosmosBatch(new PartitionKey(userId));
+
+                    for (Short s : shorts) {
+                        batch.deleteItemOperation(s.getId());
+                    }
+
+                    CosmosBatchResponse response = DBNOSQL.getContainer(Short.class).executeCosmosBatch(batch);
+                    if (response.getStatusCode() == 200) {
+                        return ok();
+                    } else {
+                        return error(INTERNAL_ERROR);
+                    }
+
+
+                } catch (Exception e) {
+                    Log.severe(() -> "Failed deleting batch: " + e.getMessage());
+                    return error(INTERNAL_ERROR);
+                }
+            });
+        }
     }
+
 
 }
